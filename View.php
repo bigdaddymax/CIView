@@ -2,7 +2,7 @@
 
 /**
  * Layout anabled View class for CI.
- * Allows to use a single layout for all pages, use temporary layouts for some pages,
+ * Allows to use a single layout for all pages, use local layouts for some pages,
  * assemble pages via adding templates with add_partial(), disable/enable layouts etc.
  * 
  */
@@ -14,13 +14,26 @@ class View {
     // Use layouts to render pag?
     private $layout_enabled = TRUE;
     private $layout_vars;
+    private $local_layout;
+
+    public function __construct() {
+        
+    }
 
     /**
-     * Sets templay file for global layout
-     * @param type $template
+     * Sets template file for global layout
+     * @param string $template
      */
     public function set_layout($template) {
         $this->layout = $template;
+    }
+
+    /**
+     * Sets template file for local layout
+     * @param string $template
+     */
+    public function set_local_layout($template) {
+        $this->local_layout = $template;
     }
 
     /**
@@ -77,20 +90,34 @@ class View {
      */
     public function fetch($template = NULL, $data = NULL) {
 
-        $content = $this->partials . ((!empty($template)) ? $this->_fetch_template($template, $data) : '');
+        $data['content'] = $this->partials . ((!empty($template)) ? $this->_fetch_template($template, $data) : '');
 
-        if ($this->layout_enabled) {
-            $data['content'] = $content;
-            return $this->_fetch_template($this->layout, array_merge($data, $this->layout_vars));
-        } else {
-            return $content;
+        if (!$this->layout_enabled) {
+            return $data['content'];
         }
+
+        if ($this->local_layout) {
+            $data['content'] = $this->_fetch_template($this->local_layout, $data);
+        }
+        
+        return $this->_fetch_template($this->layout, array_merge($data, $this->layout_vars));
     }
 
+    /**
+     * Helper function to get HTML page based on template
+     * @param string $template
+     * @param array $data
+     * @return string
+     */
     public function fetch_partial($template, $data = NULL) {
         return $this->_fetch_template($template, $data);
     }
 
+    /**
+     * Helper function that outputs to browser HTML page based on template
+     * @param string $template
+     * @param array $data
+     */
     public function render_partial($template, $data = NULL) {
         echo $this->fetch_partial($template, $data);
     }
